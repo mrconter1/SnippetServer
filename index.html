@@ -1,0 +1,135 @@
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="/static/styles.css"/>
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script>
+$(document).ready("#addBtn").click(function() {
+	$.post("addSnippet/",
+  		{ 
+			funcName: $("input[name=funcName]").val(), 
+			tags: $("input[name=tags]").val(), 
+			input: $("input[name=input]").val(), 
+			output: $("input[name=output]").val(), 
+			deps: $("input[name=deps]").val(), 
+			author: $("input[name=author]").val(), 
+			desc: $("textarea[name=desc]").val(), 
+			code: $("textarea[name=code]").val()
+		},
+  		function(data) {
+			alert(data)
+  		}
+	);
+}
+);
+
+//Search
+
+$(document).ready(function () {
+	$("#searchBar").change(function() {
+		alert( "Handler for .change() called." );
+	});
+});
+
+</script>
+</head>
+<body>
+	<div class="container">
+		<div class="leftDiv">
+			<div class="infoDiv">
+				<input id = "searchBar" autocomplete = "off" type="text" placeholder="Find a snippet..">
+				<p>Latest <b id = "logo">Snippets</b></p>
+				<div id = "snippetList">
+					<div id = "snippetName">translateToSpanish</div>
+					<div class="divider"></div>
+					<div id = "snippetName">removeFolder</div>
+					<div class="divider"></div>
+					<div id = "snippetName">convertImageToGrayscale</div>
+					<div class="divider"></div>
+					<div id = "snippetName">readLinesFromFileAsList</div>
+					<div class="divider"></div>
+					<div id = "snippetName">getSpeedOfLight</div>
+					<div class="divider"></div>
+					<div id = "snippetName">removeLastCharacterFromString</div>
+					<div class="divider"></div>
+					<div id = "snippetName">readPixelColorFromScreen</div>
+				</div>
+			</div>
+		</div>
+		<div class="rightDiv">
+			<div id="inputDiv">
+				<div class="row">
+					<div class="col">
+						<b>Function Name</b>
+					</div>
+					<div class="col">
+						<b>Tags</b>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<input id = "infoInput" autocomplete = "off" name = "funcName" type="text" placeholder="removeLastCharacterFromString">
+
+					</div>
+					<div class="col">
+						<input id = "infoInput" autocomplete = "off" name = "tags" type="text" placeholder="remove last character, remove last character in string, remove last string">
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<b>Input</b>
+					</div>
+					<div class="col">
+						<b>Output</b>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<input id = "infoInput" autocomplete = "off" name = "input" type="text" placeholder="hello world">
+
+					</div>
+					<div class="col">
+						<input id = "infoInput" autocomplete = "off" name = "output" type="text" placeholder="hello worl">
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<b>Dependencies</b>
+					</div>
+					<div class="col">
+						<b>Author</b>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<input id = "infoInput" autocomplete = "off" name = "deps" type="text" placeholder="pyStr, pyCount">
+
+					</div>
+					<div class="col">
+						<input id = "infoInput" autocomplete = "off" name = "author" type="text" placeholder="dopeman521">
+					</div>
+				</div>
+				<div class="row">
+					<div class="areaDiv">
+						<b>Description</b>	
+					</div>
+				</div>
+				<div class="row">
+					<textarea id = "inputArea" autocomplete = "off" name = "desc" rows = "4" placeholder="This function takes a given string, removes the last character and returns the resulting string."></textarea>
+				</div>
+				<div class="row">
+					<div class="areaDiv">
+						<b>Code</b>	
+					</div>
+				</div>
+				<div class="row">
+					<textarea id = "inputArea" autocomplete = "off" name = "code" rows = "4" placeholder="def removeLastChar(inputStr):&#13;&#10;    return inputStr[:-1]"></textarea>
+				</div>
+				<div id="addBtn">
+					<b class="btnTxt">Add Snippet</b>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html> 

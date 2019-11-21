@@ -1,0 +1,131 @@
+body {
+        background-image: linear-gradient(to right, #e0e0e0 , #d6d6d6);
+        font-family: Nunito;
+        margin: 0;
+        height: 100vh;
+}
+
+* {
+        font-size: 25px;
+        font-family: Nunito;
+	color: #8a8a8a;
+}
+
+b {
+	color: #8a8a8a;
+}
+
+p {
+        font-size: 40px;
+	color: #8a8a8a;
+}
+
+#logo {
+        font-size: 40px;
+        color: #4a8ee0;
+}
+
+.container {
+	display: flex;
+}
+
+.leftDiv {
+	width: 50%;
+}
+
+.rightDiv {
+	width: 50%;
+}
+
+.infoDiv {
+	margin: 10%;
+}
+
+#searchBar {
+        width: 100%;
+        margin: auto;
+        margin-top: 10%;
+
+        outline: 0;
+        border-width: 0 0 2px;
+        border-color: #cccccc;
+
+        background-color: transparent;
+}
+
+#snippetList {
+        width: 100%;
+}
+
+#snippetName {
+        text-align: left;
+        padding-top: 1%;
+        padding-bottom: 1%;
+        padding-left: 1%;
+        transition: background-color 0.5s;
+}
+
+#snippetName:hover {
+        background-color: #cccccc;
+}
+
+.divider {
+        border-bottom: 1px solid #cccccc;
+}
+
+#inputDiv {
+	margin: 5%;
+}
+
+.row {
+	display: flex;
+}
+
+.col {
+	width: 50%;
+	border-style: solid;
+        border-width: 2px;
+        border-color: #cccccc;
+	padding: 10px;
+}
+
+.areaDiv {
+        width: 100%;
+        border-style: solid;
+        border-width: 2px;
+        border-color: #cccccc;
+	padding: 10px;
+}
+
+#infoInput {
+	width: 100%;
+	border-color: transparent;
+	background-color: transparent;
+}
+
+#inputArea { 
+        width:100%;
+        background-color: transparent;
+	border-style: solid;
+        border-width: 2px;
+        border-color: #cccccc;
+	padding: 10px;
+}
+
+#addBtn {
+        text-align: center;
+	background-color: #549af0;
+        padding-top: 1%;
+        padding-bottom: 1%;
+        padding-left: 1%;
+        transition: background-color 0.5s;
+}
+
+#addBtn:hover {
+        background-color: #4a8ee0;
+}
+
+.btnTxt {
+	color: #ededed;
+}
+
