@@ -8,6 +8,7 @@ import sqlite3
 import aiohttp_jinja2
 import jinja2
 from pathlib import Path
+import json
 
 class Database():
 
@@ -49,10 +50,35 @@ class Database():
         c.execute(query)
         rows = c.fetchall()
 
-        if len(rows) > 0:
-            return rows[0][2].encode("utf8")
+        results = []
 
-        return "Nothing".encode("utf8")
+        for row in rows:
+            results.append(row[1])
+            
+        data = {}
+        data['results'] = results
+        json_data = json.dumps(data)
+
+        return json_data.encode("utf8")
+
+    def getLatest(self):
+
+        c = self.conn.cursor()
+        query = "SELECT * FROM snippets ORDER BY id DESC LIMIT 10"
+        c.execute(query)
+        rows = c.fetchall()
+
+        results = []
+
+        for row in rows:
+            results.append(row[1])
+            print(row[1])
+            
+        data = {}
+        data['results'] = results
+        json_data = json.dumps(data)
+
+        return json_data.encode("utf8")
 
     def addSnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, code):
 
@@ -86,6 +112,7 @@ class Server():
 
         app = web.Application()
         app.router.add_get('/search/{query}', self.search)
+        app.router.add_get('/latest/', self.latest)
         app.router.add_post('/addSnippet/', self.addSnippet)
         
         here = Path(__file__).resolve().parent
@@ -108,6 +135,17 @@ class Server():
         resp = web.StreamResponse()
         name = request.match_info.get('query', 'Anonymous')
         result = self.database.getSuggestions(name)
+        resp.content_length = len(result)
+        resp.content_type = 'text/plain'
+        await resp.prepare(request)
+        await resp.write(result)
+        await resp.write_eof()
+        return resp
+    
+    async def latest(self, request):
+
+        resp = web.StreamResponse()
+        result = self.database.getLatest()
         resp.content_length = len(result)
         resp.content_type = 'text/plain'
         await resp.prepare(request)
@@ -144,7 +182,6 @@ class Server():
 
 #------ MAIN ------#
 server = Server()
-
 
 
 

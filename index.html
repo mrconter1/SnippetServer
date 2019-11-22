@@ -4,32 +4,106 @@
 <link rel="stylesheet" type="text/css" href="/static/styles.css"/>
 <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
 <script>
-$(document).ready("#addBtn").click(function() {
-	$.post("addSnippet/",
-  		{ 
-			funcName: $("input[name=funcName]").val(), 
-			tags: $("input[name=tags]").val(), 
-			input: $("input[name=input]").val(), 
-			output: $("input[name=output]").val(), 
-			deps: $("input[name=deps]").val(), 
-			author: $("input[name=author]").val(), 
-			desc: $("textarea[name=desc]").val(), 
-			code: $("textarea[name=code]").val()
-		},
-  		function(data) {
-			alert(data)
-  		}
-	);
-}
-);
-
-//Search
-
 $(document).ready(function () {
-	$("#searchBar").change(function() {
-		alert( "Handler for .change() called." );
+
+	//Fetch latest
+	$.getJSON('/latest/', function(json) {
+		//Extract list from json
+		list = json["results"];
+		//Empty list
+		$("#snippetList").empty();
+		if (list.length > 0) {
+			//Populate list with results
+			jQuery.each(list, function(index, item) {
+				var snippet = '<div id = "snippetName">'+item+'</div>';
+				var divider = '<div class="divider"></div>'; 
+				$("#snippetList").append(snippet).hide().fadeIn(100);
+				if (index != (list.length-1)) {
+					$("#snippetList").append(divider).hide().fadeIn(100);
+				}
+			});
+		} else {
+			var snippet = '<div id = "snippetName">No snippets..</div>';
+			$("#snippetList").append(snippet);
+		}
+	});
+
+	$("#addBtn").click(function() {
+		$.post("addSnippet/",
+			{ 
+				funcName: $("input[name=funcName]").val(), 
+				tags: $("input[name=tags]").val(), 
+				input: $("input[name=input]").val(), 
+				output: $("input[name=output]").val(), 
+				deps: $("input[name=deps]").val(), 
+				author: $("input[name=author]").val(), 
+				desc: $("textarea[name=desc]").val(), 
+				code: $("textarea[name=code]").val()
+			},
+			function(data) {
+				alert(data)
+			}
+		);
+	});
+	$("#searchBar").keyup(function() {
+		if (!this.value) {
+			//Reset title
+			oldhtml = $('#title').html();
+			var newhtml = oldhtml.replace("Search", "Latest");
+			$('#title').html(newhtml);
+			//Fetch latest
+			$.getJSON('/latest/', function(json) {
+				//Extract list from json
+				list = json["results"];
+				//Empty list
+				$("#snippetList").empty();
+				if (list.length > 0) {
+					//Populate list with results
+					jQuery.each(list, function(index, item) {
+						var snippet = '<div id = "snippetName">'+item+'</div>';
+						var divider = '<div class="divider"></div>'; 
+						$("#snippetList").append(snippet);
+						if (index != (list.length-1)) {
+							$("#snippetList").append(divider);
+						}
+					});
+				} else {
+					var snippet = '<div id = "snippetName">No snippets..</div>';
+					$("#snippetList").append(snippet);
+				}
+			});
+	    	} else {
+			//Reset title
+			oldhtml = $('#title').html();
+			var newhtml = oldhtml.replace("Latest", "Search");
+			$('#title').html(newhtml);
+			//Get search string
+			searchStr = $('#searchBar').val();
+			//Fetch json object
+			$.getJSON('/search/' + searchStr, function(json) {
+				//Extract list from json
+				list = json["results"];
+				//Empty list
+				$("#snippetList").empty();
+				if (list.length > 0) {
+					//Populate list with results
+					jQuery.each(list, function(index, item) {
+						var snippet = '<div id = "snippetName">'+item+'</div>';
+						var divider = '<div class="divider"></div>'; 
+						$("#snippetList").append(snippet).hide().fadeIn(100);
+						if (index != (list.length-1)) {
+							$("#snippetList").append(divider).hide().fadeIn(100);
+						}
+					});
+				} else {
+					var snippet = '<div id = "snippetName">No results..</div>';
+					$("#snippetList").append(snippet);
+				}
+			});
+	    	}
 	});
 });
+
 
 </script>
 </head>
@@ -38,21 +112,8 @@ $(document).ready(function () {
 		<div class="leftDiv">
 			<div class="infoDiv">
 				<input id = "searchBar" autocomplete = "off" type="text" placeholder="Find a snippet..">
-				<p>Latest <b id = "logo">Snippets</b></p>
+				<p id = "title">Latest <b id = "logo">Snippets</b></p>
 				<div id = "snippetList">
-					<div id = "snippetName">translateToSpanish</div>
-					<div class="divider"></div>
-					<div id = "snippetName">removeFolder</div>
-					<div class="divider"></div>
-					<div id = "snippetName">convertImageToGrayscale</div>
-					<div class="divider"></div>
-					<div id = "snippetName">readLinesFromFileAsList</div>
-					<div class="divider"></div>
-					<div id = "snippetName">getSpeedOfLight</div>
-					<div class="divider"></div>
-					<div id = "snippetName">removeLastCharacterFromString</div>
-					<div class="divider"></div>
-					<div id = "snippetName">readPixelColorFromScreen</div>
 				</div>
 			</div>
 		</div>
