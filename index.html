@@ -3,115 +3,13 @@
 <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="/static/styles.css"/>
 <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-<script>
-$(document).ready(function () {
-
-	//Fetch latest
-	$.getJSON('/latest/', function(json) {
-		//Extract list from json
-		list = json["results"];
-		//Empty list
-		$("#snippetList").empty();
-		if (list.length > 0) {
-			//Populate list with results
-			jQuery.each(list, function(index, item) {
-				var snippet = '<div id = "snippetName">'+item+'</div>';
-				var divider = '<div class="divider"></div>'; 
-				$("#snippetList").append(snippet).hide().fadeIn(100);
-				if (index != (list.length-1)) {
-					$("#snippetList").append(divider).hide().fadeIn(100);
-				}
-			});
-		} else {
-			var snippet = '<div id = "snippetName">No snippets..</div>';
-			$("#snippetList").append(snippet);
-		}
-	});
-
-	$("#addBtn").click(function() {
-		$.post("addSnippet/",
-			{ 
-				funcName: $("input[name=funcName]").val(), 
-				tags: $("input[name=tags]").val(), 
-				input: $("input[name=input]").val(), 
-				output: $("input[name=output]").val(), 
-				deps: $("input[name=deps]").val(), 
-				author: $("input[name=author]").val(), 
-				desc: $("textarea[name=desc]").val(), 
-				code: $("textarea[name=code]").val()
-			},
-			function(data) {
-				alert(data)
-			}
-		);
-	});
-	$("#searchBar").keyup(function() {
-		if (!this.value) {
-			//Reset title
-			oldhtml = $('#title').html();
-			var newhtml = oldhtml.replace("Search", "Latest");
-			$('#title').html(newhtml);
-			//Fetch latest
-			$.getJSON('/latest/', function(json) {
-				//Extract list from json
-				list = json["results"];
-				//Empty list
-				$("#snippetList").empty();
-				if (list.length > 0) {
-					//Populate list with results
-					jQuery.each(list, function(index, item) {
-						var snippet = '<div id = "snippetName">'+item+'</div>';
-						var divider = '<div class="divider"></div>'; 
-						$("#snippetList").append(snippet);
-						if (index != (list.length-1)) {
-							$("#snippetList").append(divider);
-						}
-					});
-				} else {
-					var snippet = '<div id = "snippetName">No snippets..</div>';
-					$("#snippetList").append(snippet);
-				}
-			});
-	    	} else {
-			//Reset title
-			oldhtml = $('#title').html();
-			var newhtml = oldhtml.replace("Latest", "Search");
-			$('#title').html(newhtml);
-			//Get search string
-			searchStr = $('#searchBar').val();
-			//Fetch json object
-			$.getJSON('/search/' + searchStr, function(json) {
-				//Extract list from json
-				list = json["results"];
-				//Empty list
-				$("#snippetList").empty();
-				if (list.length > 0) {
-					//Populate list with results
-					jQuery.each(list, function(index, item) {
-						var snippet = '<div id = "snippetName">'+item+'</div>';
-						var divider = '<div class="divider"></div>'; 
-						$("#snippetList").append(snippet).hide().fadeIn(100);
-						if (index != (list.length-1)) {
-							$("#snippetList").append(divider).hide().fadeIn(100);
-						}
-					});
-				} else {
-					var snippet = '<div id = "snippetName">No results..</div>';
-					$("#snippetList").append(snippet);
-				}
-			});
-	    	}
-	});
-});
-
-
-</script>
+<script src="/static/script.js"></script> 
 </head>
 <body>
 	<div class="container">
 		<div class="leftDiv">
 			<div class="infoDiv">
-				<input id = "searchBar" autocomplete = "off" type="text" placeholder="Find a snippet..">
+				<input id = "searchBar" autocomplete = "off" type="text" placeholder="Find a snippet.." autofocus>
 				<p id = "title">Latest <b id = "logo">Snippets</b></p>
 				<div id = "snippetList">
 				</div>
@@ -158,7 +56,7 @@ $(document).ready(function () {
 						<b>Dependencies</b>
 					</div>
 					<div class="col">
-						<b>Author</b>
+						<b>Language</b>
 					</div>
 				</div>
 				<div class="row">
@@ -167,8 +65,20 @@ $(document).ready(function () {
 
 					</div>
 					<div class="col">
-						<input id = "infoInput" autocomplete = "off" name = "author" type="text" placeholder="dopeman521">
-					</div>
+						<input autocomplete = "off" name = "lang" type="text" placeholder="python3" id="infoInput">
+						<div id="langList" class="dropdown-content">
+						<div id = "langElement">javascript</div>
+						<div id = "langElement">python2</div>
+						<div id = "langElement">python3</div>
+						<div id = "langElement">php</div>
+						<div id = "langElement">cpp</div>
+						<div id = "langElement">csharp</div>
+						<div id = "langElement">typescript</div>
+						<div id = "langElement">shell</div>
+						<div id = "langElement">c</div>
+						<div id = "langElement">ruby</div>
+						</div>
+					</div> 
 				</div>
 				<div class="row">
 					<div class="areaDiv">

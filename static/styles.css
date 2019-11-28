@@ -67,6 +67,7 @@ p {
 
 #snippetName:hover {
         background-color: #cccccc;
+	cursor: pointer;
 }
 
 .divider {
@@ -123,9 +124,59 @@ p {
 
 #addBtn:hover {
         background-color: #4a8ee0;
+	cursor: pointer;
 }
 
 .btnTxt {
 	color: #ededed;
+}
+
+/* Dropdown */
+.dropbtn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+  background-color: #3e8e41;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f6f6f6;
+  min-width: 230px;
+  border: 1px solid #ddd;
+  z-index: 1;
+}
+
+#langList {
+	max-height: 40%;
+	overflow: auto;
+}
+
+/* Links inside the dropdown */
+#langElement {
+  	color: black;
+  	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
+}
+
+/* Change color of dropdown links on hover */
+#langElement:hover {
+	background-color: #f1f1f1
 }
 

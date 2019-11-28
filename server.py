@@ -10,6 +10,11 @@ import jinja2
 from pathlib import Path
 import json
 
+import base64
+from cryptography import fernet
+from aiohttp_session import setup, get_session
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+
 class Database():
 
     def __init__(self):
@@ -42,7 +47,36 @@ class Database():
 
         c = self.conn.cursor()
         c.execute(tableQuery)
-        
+
+        tableQuery = """ CREATE TABLE IF NOT EXISTS code (
+                                        funcName text,
+                                        javascript text,
+                                        python2 text,
+                                        python3 text,
+                                        php text,
+                                        cpp text,
+                                        csharp text,
+                                        typescript text,
+                                        shell text,
+                                        c text,
+                                        ruby text
+                                    ); """
+
+        c = self.conn.cursor()
+        c.execute(tableQuery)
+
+    def snippetExists(self, funcName):
+
+        c = self.conn.cursor()
+        query = "SELECT * FROM snippets WHERE funcName = '" + funcName + "'"
+        c.execute(query)
+        rows = c.fetchall()
+    
+        if len(rows) > 0:
+            return True
+        else:
+            return False
+
     def getSuggestions(self, funcName):
 
         c = self.conn.cursor()
@@ -80,7 +114,57 @@ class Database():
 
         return json_data.encode("utf8")
 
+    def getSnippet(self, funcName):
+
+        #Retrieve information
+        c = self.conn.cursor()
+        query = "SELECT * FROM snippets WHERE funcName = '" + funcName + "' LIMIT 1"
+        c.execute(query)
+        rows = c.fetchall()
+        
+        data = {}
+        if len(rows) == 0:
+            data['funcName'] = ""
+            data['tags'] = ""
+            data['input'] = ""
+            data['output'] = ""
+            data['deps'] = ""
+            data['author'] = ""
+            data['desc'] = ""
+            json_data = json.dumps(data)
+            return json_data.encode("utf8")
+    
+        result = rows[0]
+    
+        data['funcName'] = result[1]
+        data['tags'] = result[2]
+        data['input'] = result[3]
+        data['output'] = result[4]
+        data['deps'] = result[5]
+        data['author'] = result[6]
+        data['desc'] = result[7]
+
+        #Retrieve code
+        c = self.conn.cursor()
+        query = "SELECT * FROM code WHERE funcName = '" + funcName + "' LIMIT 1"
+        c.execute(query)
+        rows = c.fetchall()
+    
+        result = rows[0]
+
+        names = list(map(lambda x: x[0], c.description))
+        i = 1
+        for name in names:
+            data['code_'+name] = result[i]
+            i += 1
+
+        json_data = json.dumps(data)
+        return json_data.encode("utf8")
+    
     def addSnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, code):
+
+        if self.snippetExists(funcName):
+            return "Name already exists.."
 
         values = []
         values.append(funcName)
@@ -103,6 +187,8 @@ class Database():
         c = self.conn.cursor()
         c.execute(query, values)
         self.conn.commit()
+    
+        return "Thank you! Snippet will be added after a review.."
 
 class Server():
     
@@ -113,7 +199,13 @@ class Server():
         app = web.Application()
         app.router.add_get('/search/{query}', self.search)
         app.router.add_get('/latest/', self.latest)
+        app.router.add_get('/getSnippet/{query}', self.getSnippet)
         app.router.add_post('/addSnippet/', self.addSnippet)
+    
+        #For session handling
+        fernet_key = fernet.Fernet.generate_key()
+        secret_key = base64.urlsafe_b64decode(fernet_key)
+        setup(app, EncryptedCookieStorage(secret_key))
         
         here = Path(__file__).resolve().parent
         
@@ -130,8 +222,9 @@ class Server():
 
         web.run_app(app, host='78.141.209.170')
 
-    async def search(self, request):
 
+    async def search(self, request):
+        
         resp = web.StreamResponse()
         name = request.match_info.get('query', 'Anonymous')
         result = self.database.getSuggestions(name)
@@ -153,6 +246,18 @@ class Server():
         await resp.write_eof()
         return resp
 
+    async def getSnippet(self, request):
+        
+        resp = web.StreamResponse()
+        name = request.match_info.get('query', 'Anonymous')
+        result = self.database.getSnippet(name)
+        resp.content_length = len(result)
+        resp.content_type = 'text/plain'
+        await resp.prepare(request)
+        await resp.write(result)
+        await resp.write_eof()
+        return resp
+
     async def addSnippet(self, request):
  
         post = await request.post()
@@ -165,20 +270,25 @@ class Server():
         desc = post.get('desc')
         code = post.get('code')
 
-        self.database.addSnippet(   funcName,
-                                    tags,
-                                    inputEx,
-                                    outputEx,
-                                    deps,
-                                    author,
-                                    desc,
-                                    code)
+        result = self.database.addSnippet(  funcName,
+                                            tags,
+                                            inputEx,
+                                            outputEx,
+                                            deps,
+                                            author,
+                                            desc,
+                                            code)
+    
+        if len(result) > 0:
+            resp = web.StreamResponse()
+            result = result.encode("utf8")
+            resp.content_length = len(result)
+            resp.content_type = 'text/plain'
+            await resp.prepare(request)
+            await resp.write(result)
+            await resp.write_eof()
+            return resp
 
-        print("Added function: " + funcName)
-
-    async def getSnippet(self, name):
-
-        return "test"
 
 #------ MAIN ------#
 server = Server()
