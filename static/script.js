@@ -1,7 +1,6 @@
 var getUrlParameter = function getUrlParameter(sParam) {
 	var sPageURL = window.location.search.substring(1),
-	sURLVariables = sPageURL.split('&'),
-			sParameterName,
+	sURLVariables = sPageURL.split('&'), sParameterName,
 			i;
 
 	for (i = 0; i < sURLVariables.length; i++) {
@@ -44,6 +43,7 @@ $(document).ready(function () {
 			output = json["output"];
 			deps = json["deps"];
 			desc = json["desc"];
+			lang = json["lang"];
 			code = json["code"];
 
 			$("input[name=funcName]").val(funcName);
@@ -52,6 +52,7 @@ $(document).ready(function () {
 			$("input[name=output]").val(output);
 			$("input[name=deps]").val(deps);
 			$("textarea[name=desc]").val(desc);
+			$("input[name=lang]").val(lang);
 			$("textarea[name=code]").val(code);
 		});
 	}
@@ -98,6 +99,7 @@ $(document).ready(function () {
 				output: $("input[name=output]").val(), 
 				deps: $("input[name=deps]").val(), 
 				desc: $("textarea[name=desc]").val(), 
+				lang: $("input[name=lang]").val(), 
 				code: $("textarea[name=code]").val()
 			},
 			function(data) {
@@ -178,16 +180,6 @@ $(document).ready(function () {
 		$("#langList").show();
 		$('#langList').children('div').each(function () {
 			$(this).show();
-		});
-	});
-
-	$( "input[name=lang]" ).focusout(function() {
-		var inputText = $(this).val().toLowerCase();
-		$('#langList').children('div').each(function () {
-			var text = $(this).text().toLowerCase();
-			if (text === inputText) {
-				//$("#langList").hide();
-			}
 		});
 	});
 

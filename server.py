@@ -41,8 +41,7 @@ class Database():
                                         output text,
                                         deps text,
                                         author text,
-                                        desc text,
-                                        code text
+                                        desc text
                                     ); """
 
         c = self.conn.cursor()
@@ -131,6 +130,8 @@ class Database():
             data['deps'] = ""
             data['author'] = ""
             data['desc'] = ""
+            data['lang'] = ""
+            data['code'] = ""
             json_data = json.dumps(data)
             return json_data.encode("utf8")
     
@@ -154,14 +155,23 @@ class Database():
 
         names = list(map(lambda x: x[0], c.description))
         i = 1
-        for name in names:
-            data['code_'+name] = result[i]
+        found = False
+        for name in names[1:]:
+            if result[i] != None:
+                data['lang'] = name
+                data['code'] = result[i]
+                found = True
+                break
             i += 1
+
+        if not found:
+            data['lang'] = lang
+            data['code'] = ""
 
         json_data = json.dumps(data)
         return json_data.encode("utf8")
     
-    def addSnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, code):
+    def addSnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
 
         if self.snippetExists(funcName):
             return "Name already exists.."
@@ -174,19 +184,26 @@ class Database():
         values.append(deps)
         values.append(author)
         values.append(desc)
-        values.append(code)
         query = '''INSERT INTO snippets(    funcName,
                                             tags,
                                             input,
                                             output,
                                             deps,
                                             author,
-                                            desc,
-                                            code)
-              VALUES(?,?,?,?,?,?,?,?)'''
+                                            desc)
+              VALUES(?,?,?,?,?,?,?)'''
         c = self.conn.cursor()
         c.execute(query, values)
         self.conn.commit()
+
+        values = []
+        values.append(funcName)
+        values.append(code)
+        query = "INSERT INTO code(funcName, " + lang + ") VALUES(?,?)"
+        c = self.conn.cursor()
+        c.execute(query, values)
+        self.conn.commit()
+
     
         return "Thank you! Snippet will be added after a review.."
 
@@ -268,6 +285,7 @@ class Server():
         deps = post.get('deps')
         author = post.get('author')
         desc = post.get('desc')
+        lang = post.get('lang')
         code = post.get('code')
 
         result = self.database.addSnippet(  funcName,
@@ -277,6 +295,7 @@ class Server():
                                             deps,
                                             author,
                                             desc,
+                                            lang,
                                             code)
     
         if len(result) > 0:
