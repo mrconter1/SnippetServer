@@ -113,6 +113,25 @@ class Database():
 
         return json_data.encode("utf8")
 
+    def getSnippetCode(self, funcName, lang):
+
+        #Retrieve code
+        c = self.conn.cursor()
+        query = "SELECT " + lang + " FROM code WHERE funcName = '" + funcName + "' LIMIT 1"
+        c.execute(query)
+        rows = c.fetchall()
+    
+        result = rows[0]
+
+        data = {}
+        if result[0] == None:
+            data['code'] = ""
+        else:
+            data['code'] = result[0]
+
+        json_data = json.dumps(data)
+        return json_data.encode("utf8")
+
     def getSnippet(self, funcName):
 
         #Retrieve information
@@ -217,6 +236,7 @@ class Server():
         app.router.add_get('/search/{query}', self.search)
         app.router.add_get('/latest/', self.latest)
         app.router.add_get('/getSnippet/{query}', self.getSnippet)
+        app.router.add_get('/getSnippetCode/{lang}-{code}', self.getSnippetCode)
         app.router.add_post('/addSnippet/', self.addSnippet)
     
         #For session handling
@@ -275,6 +295,19 @@ class Server():
         await resp.write_eof()
         return resp
 
+    async def getSnippetCode(self, request):
+        
+        resp = web.StreamResponse()
+        lang = request.match_info.get('lang', 'Anonymous')
+        code = request.match_info.get('code', 'Anonymous')
+        result = self.database.getSnippetCode(lang, code)
+        resp.content_length = len(result)
+        resp.content_type = 'text/plain'
+        await resp.prepare(request)
+        await resp.write(result)
+        await resp.write_eof()
+        return resp
+    
     async def addSnippet(self, request):
  
         post = await request.post()

@@ -56,7 +56,18 @@ $(document).ready(function () {
 			$("textarea[name=code]").val(code);
 		});
 	}
+
+	//Loads snippet code with specified language
+	function loadSnippetCode() {
+		var snippetName = $("input[name=funcName]").val()
+		var lang = $("input[name=lang]").val()
+		$.getJSON('/getSnippetCode/' + snippetName + "-" + lang, function(json) {
+			code = json["code"];
+			$("textarea[name=code]").val(code);
+		});
+	}	
 	
+
 	function loadSpecifiedSnippet() {
 		var parameter = getUrlParameter("id");
 		if (parameter != null) {
@@ -198,6 +209,7 @@ $(document).ready(function () {
 
 	$(this).on('click', '#langElement', function() {
 		$("input[name=lang]").val($(this).text());		
+		loadSnippetCode();
 		$("#langList").hide();
 	});
 
@@ -206,6 +218,7 @@ $(document).ready(function () {
 			if (e.which == 9) {
 				var text = $('#langList').find('div:visible:first').text();
 				$("input[name=lang]").val(text);
+				loadSnippetCode();
 				e.preventDefault()
 				$("#langList").hide();
 			}
@@ -229,3 +242,5 @@ $(document).ready(function () {
         });
 
 });
+
+
