@@ -5,6 +5,14 @@ body {
         height: 100vh;
 }
 
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  	color: #ababab;
+}
+
+::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+  	color: #ababab;
+}
+
 * {
         font-size: 25px;
         font-family: Nunito;

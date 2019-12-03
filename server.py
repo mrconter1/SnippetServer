@@ -9,6 +9,8 @@ import aiohttp_jinja2
 import jinja2
 from pathlib import Path
 import json
+import ssl
+import os
 
 import base64
 from cryptography import fernet
@@ -225,6 +227,15 @@ class Database():
 
     
         return "Thank you! Snippet will be added after a review.."
+    
+    def modifySnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
+        return 0
+
+    def returnSnippetHistory(self, funcName):
+        return 0
+
+    def rollbackSnippet(self, funcName, historyID):
+        return 0
 
 class Server():
     
@@ -257,8 +268,14 @@ class Server():
                       path=str('static'),
                       name='static')
 
-        web.run_app(app, host='78.141.209.170')
+        cert = '/etc/letsencrypt/live/snippetdepot.com/fullchain.pem'
+        key = '/etc/letsencrypt/live/snippetdepot.com/privkey.pem'
 
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.verify_mode = ssl.CERT_OPTIONAL
+        ssl_context.load_cert_chain(cert, key)
+
+        web.run_app(app, ssl_context=ssl_context, host='78.141.209.170', port='443')
 
     async def search(self, request):
         
