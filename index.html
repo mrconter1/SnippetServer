@@ -1,16 +1,26 @@
 <html>
 <head>
+<title>Snippets</title>
+<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+<link rel="manifest" href="/images/site.webmanifest">
+<link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
 <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="/static/styles.css"/>
 <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
 <script src="/static/script.js"></script> 
-<title id="Snippets"></title>
 </head>
 <body>
 	<div class="container">
 		<div class="leftDiv">
 			<div class="infoDiv">
-				<input id = "searchBar" autocomplete = "off" type="text" placeholder="Find a snippet.." autofocus>
+				<input id = "searchBar" autocomplete = "off" type="text" placeholder="Enter name, tag or description to find a snippet.." autofocus>
+				<div id = "language">
+					<div class="langOpt">python2</div>
+				</div>
 				<p id = "title">Latest <b id = "logo">Snippets</b></p>
 				<div id = "snippetList">
 				</div>
@@ -19,10 +29,10 @@
 		<div class="rightDiv">
 			<div id="inputDiv">
 				<div class="row">
-					<div class="col">
+					<div class="col" style="border-radius: 10px 0px 0px 0px;">
 						<b>Function Name</b>
 					</div>
-					<div class="col">
+					<div class="col" style="border-radius: 0px 10px 0px 0px;">
 						<b>Tags</b>
 					</div>
 				</div>
@@ -71,6 +81,7 @@
 						<div id = "langElement">javascript</div>
 						<div id = "langElement">python2</div>
 						<div id = "langElement">python3</div>
+						<div id = "langElement">java</div>
 						<div id = "langElement">php</div>
 						<div id = "langElement">cpp</div>
 						<div id = "langElement">csharp</div>
@@ -97,7 +108,7 @@
 				<div class="row">
 					<textarea id = "inputArea" autocomplete = "off" name = "code" rows = "4" placeholder="def removeLastChar(inputStr):&#13;&#10;    return inputStr[:-1]"></textarea>
 				</div>
-				<div id="addBtn">
+				<div id="addBtn" style="border-radius: 0px 0px 10px 10px;">
 					<b class="btnTxt">Add Snippet</b>
 				</div>
 			</div>

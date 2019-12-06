@@ -23,9 +23,39 @@ b {
 	color: #8a8a8a;
 }
 
-p {
+#title {
         font-size: 40px;
 	color: #8a8a8a;
+	margin-top: 5%;
+	margin-bottom: 1%;
+}
+
+#language {
+	margin-top:1.5%;
+	margin-left:1%;
+	word-wrap: break-word;
+	text-align: center;
+	display: inline-block;
+	border-radius:3px;
+}
+
+.langOpt {
+        font-size: 20px;
+        color: white;
+        background-color: #4a8ee0;
+	padding:3px;
+	padding-left:10px;
+	padding-right:10px;
+        transition: background-color 0.5s;
+	cursor: pointer;
+	float: left;
+	border-radius: 5px;
+}
+
+.langOpt:hover {
+        font-size: 20px;
+        color: white;
+        background-color: #366eb3; 
 }
 
 #logo {

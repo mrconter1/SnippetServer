@@ -14,8 +14,7 @@ var getUrlParameter = function getUrlParameter(sParam) {
 
 function filterFunction() {
         var input, filter, ul, li, a, i;
-        input = document.getElementByName("lang");
-        filter = input.value.toUpperCase();
+        input = document.getElementByName("lang"); filter = input.value.toUpperCase();
         div = document.getElementById("langList");
         a = div.getElementsByTagName("a");
         for (i = 0; i < a.length; i++) {
@@ -28,23 +27,30 @@ function filterFunction() {
         }
 }
 
+function sanitize(str) {
+	str = str.replace(/</g, "﹤").replace(/>/g, "﹥");
+	return str
+}
+
 $(document).ready(function () {
+
+	var buttonState = "add";
 	
 	//Initilize page
 	loadLatest();
 	loadSpecifiedSnippet();
-	
+
 	//Loads snippet if specified
 	function loadSnippet(snippetName) {
 		$.getJSON('/getSnippet/' + snippetName, function(json) {
-			funcName = json["funcName"];
-			tags = json["tags"];
-			input = json["input"];
-			output = json["output"];
-			deps = json["deps"];
-			desc = json["desc"];
-			lang = json["lang"];
-			code = json["code"];
+			funcName = sanitize(json["funcName"]);
+			tags = sanitize(json["tags"]);
+			input = sanitize(json["input"]);
+			output = sanitize(json["output"]);
+			deps = sanitize(json["deps"]);
+			desc = sanitize(json["desc"]);
+			lang = sanitize(json["lang"]);
+			code = sanitize(json["code"])
 
 			$("input[name=funcName]").val(funcName);
 			$("input[name=tags]").val(tags);
@@ -56,17 +62,6 @@ $(document).ready(function () {
 			$("textarea[name=code]").val(code);
 		});
 	}
-
-	//Loads snippet code with specified language
-	function loadSnippetCode() {
-		var snippetName = $("input[name=funcName]").val()
-		var lang = $("input[name=lang]").val()
-		$.getJSON('/getSnippetCode/' + snippetName + "-" + lang, function(json) {
-			code = json["code"];
-			$("textarea[name=code]").val(code);
-		});
-	}	
-	
 
 	function loadSpecifiedSnippet() {
 		var parameter = getUrlParameter("id");
@@ -86,7 +81,7 @@ $(document).ready(function () {
 			if (list.length > 0) {
 				//Populate list with results
 				jQuery.each(list, function(index, item) {
-					var snippet = '<div id = "snippetName">'+item+'</div>';
+					var snippet = '<div id = "snippetName">'+sanitize(item)+'</div>';
 					var divider = '<div class="divider"></div>'; 
 					$("#snippetList").append(snippet).hide().fadeIn(100);
 					if (index != (list.length-1)) {
@@ -96,12 +91,27 @@ $(document).ready(function () {
 			} else {
 				var snippet = '<div id = "snippetName">No snippets..</div>';
 				$("#snippetList").append(snippet);
-			}
-		});
+				}
+			});
     	}
 
 	//Post a snippet
 	$("#addBtn").click(function() {
+		if (buttonState == "clear") {
+			buttonState = "add";
+			$(".btnTxt").html("Add Snippet");	
+
+			$("input[name=funcName]").val("");
+			$("input[name=tags]").val("");
+			$("input[name=input]").val("");
+			$("input[name=output]").val("");
+			$("input[name=deps]").val("");
+			$("textarea[name=desc]").val("");
+			$("input[name=lang]").val("");
+			$("textarea[name=code]").val("");
+
+			return 0;
+		}
 		$.post("addSnippet/",
 			{ 
 				funcName: $("input[name=funcName]").val(), 
@@ -115,6 +125,7 @@ $(document).ready(function () {
 			},
 			function(data) {
 				alert(data)
+				document.location.href="/";
 			}
 		);
 	});
@@ -133,8 +144,9 @@ $(document).ready(function () {
 			$('#title').html(newhtml);
 			//Get search string
 			var searchStr = $('#searchBar').val();
+			var lang = $('.langOpt').first().text().trim();
 			//Fetch json object
-			$.getJSON('/search/' + searchStr, function(json) {
+			$.getJSON('/search/' + lang + '/' + searchStr, function(json) {
 				//Extract list from json
 				list = json["results"];
 				//Empty list
@@ -160,6 +172,8 @@ $(document).ready(function () {
 	$(document).on('mouseenter', '#snippetName', function() {
 		var snippetName = $(this).text();
 		loadSnippet(snippetName);
+		buttonState = "clear";
+		$(".btnTxt").html("Clear fields");	
 	});
 	
 	$(document).on('mouseup', '#snippetName', function() {
@@ -209,7 +223,6 @@ $(document).ready(function () {
 
 	$(this).on('click', '#langElement', function() {
 		$("input[name=lang]").val($(this).text());		
-		loadSnippetCode();
 		$("#langList").hide();
 	});
 
@@ -218,7 +231,6 @@ $(document).ready(function () {
 			if (e.which == 9) {
 				var text = $('#langList').find('div:visible:first').text();
 				$("input[name=lang]").val(text);
-				loadSnippetCode();
 				e.preventDefault()
 				$("#langList").hide();
 			}
@@ -240,6 +252,43 @@ $(document).ready(function () {
                         $("#langList").hide();
                 }
         });
+
+	//Language filtering
+	$(document).on('mouseenter', '#language', function() {
+		var currentLang = $('#language').text().trim();
+		var langList = [	"javascript", 
+					"python2", 
+					"python3", 
+					"java", 
+					"php", 
+					"cpp", 
+					"csharp", 
+					"typescript", 
+					"shell", 
+					"c", 
+					"ruby"];
+		$.each(langList , function(index, val) { 
+			if(currentLang == val) {
+				return true;
+			}
+			var lang = '<div class = "langOpt">'+val+'</div>';
+			$("#language").append(lang).fadeIn(100);
+			$('.langOpt').css('border-radius', '0px');
+		});
+		$('.langOpt').first().css('border-radius', '5px 0px 0px 0px');
+	});
+
+	$(document).on('mouseleave', '#language', function() {
+		$('.langOpt').not(':first').remove();
+		$('.langOpt').css('border-radius', '5px');
+	});
+
+	$(this).on('click', '.langOpt', function() {
+		var lang = $(this).text();
+		$('.langOpt').not(':first').remove();
+		$('.langOpt').text(lang);
+		$('.langOpt').css('border-radius', '5px');
+	});
 
 });
 

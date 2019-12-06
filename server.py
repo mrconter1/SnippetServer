@@ -43,33 +43,19 @@ class Database():
                                         output text,
                                         deps text,
                                         author text,
-                                        desc text
+                                        desc text,
+                                        lang text,
+                                        code text,
+                                        review text
                                     ); """
 
         c = self.conn.cursor()
         c.execute(tableQuery)
 
-        tableQuery = """ CREATE TABLE IF NOT EXISTS code (
-                                        funcName text,
-                                        javascript text,
-                                        python2 text,
-                                        python3 text,
-                                        php text,
-                                        cpp text,
-                                        csharp text,
-                                        typescript text,
-                                        shell text,
-                                        c text,
-                                        ruby text
-                                    ); """
+    def snippetExists(self, funcName, lang):
 
         c = self.conn.cursor()
-        c.execute(tableQuery)
-
-    def snippetExists(self, funcName):
-
-        c = self.conn.cursor()
-        query = "SELECT * FROM snippets WHERE funcName = '" + funcName + "'"
+        query = "SELECT * FROM snippets WHERE funcName = '" + funcName + "' AND lang = '" + lang + "'"
         c.execute(query)
         rows = c.fetchall()
     
@@ -78,10 +64,10 @@ class Database():
         else:
             return False
 
-    def getSuggestions(self, funcName):
+    def getSuggestions(self, funcName, lang):
 
         c = self.conn.cursor()
-        query = "SELECT * FROM snippets WHERE funcName like '%" + funcName + "%' limit 10"
+        query = "SELECT * FROM snippets WHERE funcName like '%" + funcName + "%' AND lang = '" + lang + "'limit 10"
         c.execute(query)
         rows = c.fetchall()
 
@@ -107,31 +93,11 @@ class Database():
 
         for row in rows:
             results.append(row[1])
-            print(row[1])
             
         data = {}
         data['results'] = results
         json_data = json.dumps(data)
 
-        return json_data.encode("utf8")
-
-    def getSnippetCode(self, funcName, lang):
-
-        #Retrieve code
-        c = self.conn.cursor()
-        query = "SELECT " + lang + " FROM code WHERE funcName = '" + funcName + "' LIMIT 1"
-        c.execute(query)
-        rows = c.fetchall()
-    
-        result = rows[0]
-
-        data = {}
-        if result[0] == None:
-            data['code'] = ""
-        else:
-            data['code'] = result[0]
-
-        json_data = json.dumps(data)
         return json_data.encode("utf8")
 
     def getSnippet(self, funcName):
@@ -165,37 +131,46 @@ class Database():
         data['deps'] = result[5]
         data['author'] = result[6]
         data['desc'] = result[7]
-
-        #Retrieve code
-        c = self.conn.cursor()
-        query = "SELECT * FROM code WHERE funcName = '" + funcName + "' LIMIT 1"
-        c.execute(query)
-        rows = c.fetchall()
-    
-        result = rows[0]
-
-        names = list(map(lambda x: x[0], c.description))
-        i = 1
-        found = False
-        for name in names[1:]:
-            if result[i] != None:
-                data['lang'] = name
-                data['code'] = result[i]
-                found = True
-                break
-            i += 1
-
-        if not found:
-            data['lang'] = lang
-            data['code'] = ""
+        data['lang'] = result[8]
+        data['code'] = result[9]
 
         json_data = json.dumps(data)
         return json_data.encode("utf8")
+
+    def validLanguage(self, lang):
+
+        langList = [    "javascript",
+                        "python2",
+                        "python3",
+                        "java",
+                        "php",
+                        "cpp",
+                        "csharp",
+                        "typescript",
+                        "shell",
+                        "c",
+                        "ruby"]
+
+        if lang in langList:
+            return True
+        return False
     
     def addSnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
 
-        if self.snippetExists(funcName):
+        lang = lang.strip().lower()
+
+        if funcName == "":
+            return "The snippet must have a name.."
+        if desc == "":
+            return "The snippet must have a description.."
+        if code == "":
+            return "The snippet must have a code.."
+
+        if self.snippetExists(funcName, lang):
             return "Name already exists.."
+
+        if not self.validLanguage(lang):
+            return "The language have not been added yet.."
 
         values = []
         values.append(funcName)
@@ -205,28 +180,24 @@ class Database():
         values.append(deps)
         values.append(author)
         values.append(desc)
+        values.append(lang)
+        values.append(code)
+
         query = '''INSERT INTO snippets(    funcName,
                                             tags,
                                             input,
                                             output,
                                             deps,
                                             author,
-                                            desc)
-              VALUES(?,?,?,?,?,?,?)'''
+                                            desc,
+                                            lang,
+                                            code)
+              VALUES(?,?,?,?,?,?,?,?,?)'''
         c = self.conn.cursor()
         c.execute(query, values)
         self.conn.commit()
-
-        values = []
-        values.append(funcName)
-        values.append(code)
-        query = "INSERT INTO code(funcName, " + lang + ") VALUES(?,?)"
-        c = self.conn.cursor()
-        c.execute(query, values)
-        self.conn.commit()
-
     
-        return "Thank you! Snippet will be added after a review.."
+        return "Thank you!"
     
     def modifySnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
         return 0
@@ -245,6 +216,7 @@ class Server():
 
         app = web.Application()
         app.router.add_get('/search/{query}', self.search)
+        app.router.add_get('/search/{lang}/{query}', self.search)
         app.router.add_get('/latest/', self.latest)
         app.router.add_get('/getSnippet/{query}', self.getSnippet)
         app.router.add_get('/getSnippetCode/{lang}-{code}', self.getSnippetCode)
@@ -268,6 +240,10 @@ class Server():
                       path=str('static'),
                       name='static')
 
+        app.router.add_static('/images/',
+                      path=str('images'),
+                      name='images')
+
         cert = '/etc/letsencrypt/live/snippetdepot.com/fullchain.pem'
         key = '/etc/letsencrypt/live/snippetdepot.com/privkey.pem'
 
@@ -281,7 +257,8 @@ class Server():
         
         resp = web.StreamResponse()
         name = request.match_info.get('query', 'Anonymous')
-        result = self.database.getSuggestions(name)
+        lang = request.match_info.get('lang', 'Anonymous')
+        result = self.database.getSuggestions(name, lang)
         resp.content_length = len(result)
         resp.content_type = 'text/plain'
         await resp.prepare(request)
