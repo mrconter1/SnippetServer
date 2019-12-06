@@ -223,7 +223,6 @@ class Server():
         app.router.add_get('/search/{lang}/{query}', self.search)
         app.router.add_get('/latest/', self.latest)
         app.router.add_get('/getSnippet/{query}', self.getSnippet)
-        app.router.add_get('/getSnippetCode/{lang}-{code}', self.getSnippetCode)
         app.router.add_post('/addSnippet/', self.addSnippet)
     
         #For session handling
@@ -278,17 +277,11 @@ class Server():
 
         return await self.respond(request, result)
 
-    async def getSnippetCode(self, request):
-        
-        lang = request.match_info.get('lang', 'Anonymous')
-        code = request.match_info.get('code', 'Anonymous')
-        result = self.database.getSnippetCode(lang, code)
-
-        return await self.respond(request, result)
-    
     async def addSnippet(self, request):
  
-        #spam = await self.isSpam(request)
+        spam = await self.isSpam(request, 60)
+        if spam:
+            return await self.respond(request, "You can only add one snippet per minute..")
         post = await request.post()
         funcName = post.get('funcName')
         tags = post.get('tags')
@@ -314,16 +307,18 @@ class Server():
             return await self.respond(request, result)
 
     async def isSpam(self, request, allowedRequestRate):
+        spam = False
         peername = request.transport.get_extra_info('peername')
         if peername is not None:
             host, port = peername
             currentTime = round(time.time())
             if host in self.activityDict.keys():
-                if (currentTime - self.activity[host]) < allowedRequestRate:
-                    self.activityDict[host] = currentTime
-                    return False
+                oldTime = self.activityDict[host]
+                if (currentTime - oldTime) < allowedRequestRate:
+                    spam = True
             self.activityDict[host] = currentTime
-            
+        return spam 
+
     async def respond(self, request, response):
         resp = web.StreamResponse()
         result = response.encode("utf8")
