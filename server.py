@@ -9,6 +9,7 @@ import aiohttp_jinja2
 import jinja2
 from pathlib import Path
 import json
+import time
 import ssl
 import os
 
@@ -80,7 +81,7 @@ class Database():
         data['results'] = results
         json_data = json.dumps(data)
 
-        return json_data.encode("utf8")
+        return json_data
 
     def getLatest(self):
 
@@ -98,7 +99,7 @@ class Database():
         data['results'] = results
         json_data = json.dumps(data)
 
-        return json_data.encode("utf8")
+        return json_data
 
     def getSnippet(self, funcName):
 
@@ -120,7 +121,7 @@ class Database():
             data['lang'] = ""
             data['code'] = ""
             json_data = json.dumps(data)
-            return json_data.encode("utf8")
+            return json_data
     
         result = rows[0]
     
@@ -135,7 +136,7 @@ class Database():
         data['code'] = result[9]
 
         json_data = json.dumps(data)
-        return json_data.encode("utf8")
+        return json_data
 
     def validLanguage(self, lang):
 
@@ -154,7 +155,7 @@ class Database():
         if lang in langList:
             return True
         return False
-    
+ 
     def addSnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
 
         lang = lang.strip().lower()
@@ -212,6 +213,9 @@ class Server():
     
     def __init__(self):
 
+        #Stores last activity by IP 
+        self.activityDict = {}
+
         self.database = Database()
 
         app = web.Application()
@@ -255,55 +259,36 @@ class Server():
 
     async def search(self, request):
         
-        resp = web.StreamResponse()
         name = request.match_info.get('query', 'Anonymous')
         lang = request.match_info.get('lang', 'Anonymous')
         result = self.database.getSuggestions(name, lang)
-        resp.content_length = len(result)
-        resp.content_type = 'text/plain'
-        await resp.prepare(request)
-        await resp.write(result)
-        await resp.write_eof()
-        return resp
-    
+
+        return await self.respond(request, result)
+        
     async def latest(self, request):
 
-        resp = web.StreamResponse()
         result = self.database.getLatest()
-        resp.content_length = len(result)
-        resp.content_type = 'text/plain'
-        await resp.prepare(request)
-        await resp.write(result)
-        await resp.write_eof()
-        return resp
+
+        return await self.respond(request, result)
 
     async def getSnippet(self, request):
         
-        resp = web.StreamResponse()
         name = request.match_info.get('query', 'Anonymous')
         result = self.database.getSnippet(name)
-        resp.content_length = len(result)
-        resp.content_type = 'text/plain'
-        await resp.prepare(request)
-        await resp.write(result)
-        await resp.write_eof()
-        return resp
+
+        return await self.respond(request, result)
 
     async def getSnippetCode(self, request):
         
-        resp = web.StreamResponse()
         lang = request.match_info.get('lang', 'Anonymous')
         code = request.match_info.get('code', 'Anonymous')
         result = self.database.getSnippetCode(lang, code)
-        resp.content_length = len(result)
-        resp.content_type = 'text/plain'
-        await resp.prepare(request)
-        await resp.write(result)
-        await resp.write_eof()
-        return resp
+
+        return await self.respond(request, result)
     
     async def addSnippet(self, request):
  
+        #spam = await self.isSpam(request)
         post = await request.post()
         funcName = post.get('funcName')
         tags = post.get('tags')
@@ -326,15 +311,28 @@ class Server():
                                             code)
     
         if len(result) > 0:
-            resp = web.StreamResponse()
-            result = result.encode("utf8")
-            resp.content_length = len(result)
-            resp.content_type = 'text/plain'
-            await resp.prepare(request)
-            await resp.write(result)
-            await resp.write_eof()
-            return resp
+            return await self.respond(request, result)
 
+    async def isSpam(self, request, allowedRequestRate):
+        peername = request.transport.get_extra_info('peername')
+        if peername is not None:
+            host, port = peername
+            currentTime = round(time.time())
+            if host in self.activityDict.keys():
+                if (currentTime - self.activity[host]) < allowedRequestRate:
+                    self.activityDict[host] = currentTime
+                    return False
+            self.activityDict[host] = currentTime
+            
+    async def respond(self, request, response):
+        resp = web.StreamResponse()
+        result = response.encode("utf8")
+        resp.content_length = len(result)
+        resp.content_type = 'text/plain'
+        await resp.prepare(request)
+        await resp.write(result)
+        await resp.write_eof()
+        return resp
 
 #------ MAIN ------#
 server = Server()
