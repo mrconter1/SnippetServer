@@ -18,6 +18,52 @@ from cryptography import fernet
 from aiohttp_session import setup, get_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
+class Userdata():
+
+    def __init__(self):
+
+        self.conn = self.createConnection("userdata.db")
+        self.initUserdata()
+
+    def createConnection(self, dbName):
+
+        conn = None
+        try:
+            conn = sqlite3.connect(dbName)
+            return conn
+        except Error as e:
+            print(e)
+
+    def initUserdata(self):
+
+        tableQuery = """ CREATE TABLE IF NOT EXISTS users (
+                                        id integer PRIMARY KEY,
+                                        username text,
+                                        salt text,
+                                        hash text,
+                                        priv text
+                                    ); """
+
+        c = self.conn.cursor()
+        c.execute(tableQuery)
+
+    async def auth(self, request):
+        print("Autheticating..")
+        session = await get_session(request)
+        if 'test' in session:
+            print(session['test'])
+        else:
+            session['test'] = "hello"
+
+    def userExists(self, username):
+        return True
+
+    def registerUser(self, username, password):
+        return True
+
+    def getUserPriv(self, username):
+        return True
+
 class Database():
 
     def __init__(self):
@@ -56,8 +102,11 @@ class Database():
     def snippetExists(self, funcName, lang):
 
         c = self.conn.cursor()
-        query = "SELECT * FROM snippets WHERE funcName = '" + funcName + "' AND lang = '" + lang + "'"
-        c.execute(query)
+        values = []
+        values.append(funcName)
+        values.append(lang)
+        query = "SELECT * FROM snippets WHERE funcName = ? AND lang = ?"
+        c.execute(query, values)
         rows = c.fetchall()
     
         if len(rows) > 0:
@@ -65,11 +114,15 @@ class Database():
         else:
             return False
 
-    def getSuggestions(self, funcName, lang):
+    def getSuggestions(self, query, lang):
 
         c = self.conn.cursor()
-        query = "SELECT * FROM snippets WHERE funcName like '%" + funcName + "%' AND lang = '" + lang + "'limit 10"
-        c.execute(query)
+        values = []
+        values.append("%" + query + "%")
+        values.append("%" + query + "%")
+        values.append(lang)
+        query = "SELECT * FROM snippets WHERE (funcName like ? OR tags like ?) AND lang = ? limit 10"
+        c.execute(query, values)
         rows = c.fetchall()
 
         results = []
@@ -105,8 +158,10 @@ class Database():
 
         #Retrieve information
         c = self.conn.cursor()
-        query = "SELECT * FROM snippets WHERE funcName = '" + funcName + "' LIMIT 1"
-        c.execute(query)
+        values = []
+        values.append(funcName)
+        query = "SELECT * FROM snippets WHERE funcName = ? LIMIT 1"
+        c.execute(query, values)
         rows = c.fetchall()
         
         data = {}
@@ -217,6 +272,7 @@ class Server():
         self.activityDict = {}
 
         self.database = Database()
+        self.userdata = Userdata()
 
         app = web.Application()
         app.router.add_get('/search/{query}', self.search)
@@ -250,7 +306,7 @@ class Server():
         cert = '/etc/letsencrypt/live/snippetdepot.com/fullchain.pem'
         key = '/etc/letsencrypt/live/snippetdepot.com/privkey.pem'
 
-        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context = ssl.create_default_context()
         ssl_context.verify_mode = ssl.CERT_OPTIONAL
         ssl_context.load_cert_chain(cert, key)
 
@@ -258,6 +314,8 @@ class Server():
 
     async def search(self, request):
         
+        await self.userdata.auth(request)
+
         name = request.match_info.get('query', 'Anonymous')
         lang = request.match_info.get('lang', 'Anonymous')
         result = self.database.getSuggestions(name, lang)
@@ -279,9 +337,9 @@ class Server():
 
     async def addSnippet(self, request):
  
-        spam = await self.isSpam(request, 60)
+        spam = await self.isSpam(request, 30)
         if spam:
-            return await self.respond(request, "You can only add one snippet per minute..")
+            return await self.respond(request, "You can only add one snippet each 30 seconds..")
         post = await request.post()
         funcName = post.get('funcName')
         tags = post.get('tags')
