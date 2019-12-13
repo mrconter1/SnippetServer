@@ -40,6 +40,12 @@ $(document).ready(function () {
 	loadLatest();
 	loadSpecifiedSnippet();
 
+	//Set initial language
+	if ($.cookie("lang")) {
+		var lang = $.cookie("lang");
+		$(".langOpt").html(lang);
+	}
+
 	function isAuthenticated() {
 		$.getJSON('/isAuth/', function(json) {
 			auth = json['authenticated'].toString().trim();
@@ -298,6 +304,7 @@ $(document).ready(function () {
 		$('.langOpt').not(':first').remove();
 		$('.langOpt').text(lang);
 		$('.langOpt').css('border-radius', '5px');
+		$.cookie("lang", lang);
 	});
 
 	//Login
