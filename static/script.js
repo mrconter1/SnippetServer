@@ -40,9 +40,25 @@ $(document).ready(function () {
 	loadLatest();
 	loadSpecifiedSnippet();
 
+	function isAuthenticated() {
+		$.getJSON('/isAuth/', function(json) {
+			auth = json['authenticated'].toString().trim();
+			if (auth === "true") {
+				loadAdminTools();
+			} 
+		});
+	}
+
+	function loadAdminTools() {
+		$('.deleteBtn').each(function () {
+			$(this).show();
+		});
+	 }
+
+
 	//Loads snippet if specified
-	function loadSnippet(snippetName) {
-		$.getJSON('/getSnippet/' + snippetName, function(json) {
+	function loadSnippet(snippetID) {
+		$.getJSON('/getSnippet/' + snippetID, function(json) {
 			funcName = sanitize(json["funcName"]);
 			tags = sanitize(json["tags"]);
 			input = sanitize(json["input"]);
@@ -69,30 +85,39 @@ $(document).ready(function () {
 			loadSnippet(parameter);
 		}	
 	}
+
+	function populateList(json) {
+		//Extract list from json
+		list = json["results"];
+		//Empty list
+		$("#snippetList").empty();
+		if (list.length > 0) {
+			//Populate list with results
+			jQuery.each(list, function(index, item) {
+				var snippet = '<div class = "snippetName">';
+				snippet += '<div class="nameDiv">' + sanitize(item.funcName) + "</div>";
+				snippet += '<div class="deleteBtn" style="display:none"><b class="deleteBtnTxt">Delete</b></div>';
+				snippet += '<input type="hidden" value="' + sanitize(item.id.toString()) + '" />';
+				snippet += '</div>';
+				var divider = '<div class="divider"></div>';
+				$("#snippetList").append(snippet).hide().fadeIn(100);
+				if (index != (list.length-1)) {
+					$("#snippetList").append(divider).hide().fadeIn(100);
+				}
+			});
+			isAuthenticated();
+		} else {
+			var snippet = '<div class = "snippetName">No snippets..</div>';
+			$("#snippetList").append(snippet);
+		}
+	}
 	
 	//Load latest snippets and add to snippet list
 	function loadLatest() {
 		//Fetch latest
 		$.getJSON('/latest/', function(json) {
-			//Extract list from json
-			list = json["results"];
-			//Empty list
-			$("#snippetList").empty();
-			if (list.length > 0) {
-				//Populate list with results
-				jQuery.each(list, function(index, item) {
-					var snippet = '<div id = "snippetName">'+sanitize(item)+'</div>';
-					var divider = '<div class="divider"></div>'; 
-					$("#snippetList").append(snippet).hide().fadeIn(100);
-					if (index != (list.length-1)) {
-						$("#snippetList").append(divider).hide().fadeIn(100);
-					}
-				});
-			} else {
-				var snippet = '<div id = "snippetName">No snippets..</div>';
-				$("#snippetList").append(snippet);
-				}
-			});
+			populateList(json);
+		});
     	}
 
 	//Post a snippet
@@ -147,38 +172,23 @@ $(document).ready(function () {
 			var lang = $('.langOpt').first().text().trim();
 			//Fetch json object
 			$.getJSON('/search/' + lang + '/' + searchStr, function(json) {
-				//Extract list from json
-				list = json["results"];
-				//Empty list
-				$("#snippetList").empty();
-				if (list.length > 0) {
-					//Populate list with results
-					jQuery.each(list, function(index, item) {
-						var snippet = '<div id = "snippetName">'+item+'</div>';
-						var divider = '<div class="divider"></div>'; 
-						$("#snippetList").append(snippet).hide().fadeIn(100);
-						if (index != (list.length-1)) {
-							$("#snippetList").append(divider).hide().fadeIn(100);
-						}
-					});
-				} else {
-					var snippet = '<div id = "snippetName">No results..</div>';
-					$("#snippetList").append(snippet);
-				}
+				populateList(json);
 			});
 	    	}
 	});
 	
-	$(document).on('mouseenter', '#snippetName', function() {
-		var snippetName = $(this).text();
-		loadSnippet(snippetName);
+	$(document).on('mouseenter', '.snippetName', function() {
+		var snippetID = $(this).find('input').val();
+		loadSnippet(snippetID);
 		buttonState = "clear";
 		$(".btnTxt").html("Clear fields");	
 	});
 	
-	$(document).on('mouseup', '#snippetName', function() {
-        	var snippetName = $(this).text();
-		window.location.href = "?id=" + snippetName;
+	$(document).on('mouseup', '.snippetName', function(e) {
+		if ($(event.target).is('.snippetName')){
+			var snippetName = $(this).text();
+			window.location.href = "?id=" + snippetName;
+		}
         });
 	
 	$(document).delegate('#inputArea', 'keydown', function(e) {
@@ -290,6 +300,48 @@ $(document).ready(function () {
 		$('.langOpt').css('border-radius', '5px');
 	});
 
+	//Login
+	$(this).on('click', '.loginBtn', function() {
+		if ($(".loginPanel").is(":visible")) {
+			$(".loginPanel").fadeOut(200);
+		} else {
+			$(".loginPanel").fadeIn(200);
+			$("input[name='loginUser']").focus();
+		}
+        });
+	
+	$('.loginInput').keypress(function (e) {
+ 		var key = e.which;
+ 		if(key == 13)
+  		{
+			$.post("login/",
+			{
+				username: $("input[name=loginUser]").val(),
+				password: $("input[name=loginPass]").val()
+			},
+			function(data) {
+				location.reload(true);
+			}
+		);
+
+  		}
+	});   	
+
+	//Admin
+	$(this).on('click', '.deleteBtnTxt', function(e) {
+		var res = confirm('Are you sure?');
+		if (res && $(event.target).is('.deleteBtnTxt')){
+			var idValue = $(this).parent().parent().find('input').val();
+			$.post("delete/",
+			{
+				id: idValue,
+			},
+			function(data) {
+				document.location.href="/";
+			});
+		}
+        });
+	
 });
 
 

@@ -11,15 +11,21 @@
 <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="/static/styles.css"/>
 <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
 <script src="/static/script.js"></script> 
 </head>
 <body>
+	<div class="loginBtn"><img src="https://img.icons8.com/android/25/000000/login-rounded-right.png"></div>
+	<div class="loginPanel" style="display:none">
+		<input class = "loginInput" autocomplete = "off" name = "loginUser" type="text" placeholder="Username">
+		<input class = "loginInput" type="password" autocomplete = "off" name = "loginPass" type="text" placeholder="Password">
+	</div>
 	<div class="container">
 		<div class="leftDiv">
 			<div class="infoDiv">
 				<input id = "searchBar" autocomplete = "off" type="text" placeholder="Enter name, tag or description to find a snippet.." autofocus>
 				<div id = "language">
-					<div class="langOpt">python2</div>
+					<div class="langOpt">python3</div>
 				</div>
 				<p id = "title">Latest <b id = "logo">Snippets</b></p>
 				<div id = "snippetList">
@@ -108,8 +114,10 @@
 				<div class="row">
 					<textarea id = "inputArea" autocomplete = "off" name = "code" rows = "4" placeholder="def removeLastChar(inputStr):&#13;&#10;    return inputStr[:-1]"></textarea>
 				</div>
-				<div id="addBtn" style="border-radius: 0px 0px 10px 10px;">
-					<b class="btnTxt">Add Snippet</b>
+				<div id="btnDiv" style="border-radius: 0px 0px 10px 10px;">
+					<div id="addBtn" style="border-radius: 0px 0px 10px 10px;">
+						<b class="btnTxt">Add Snippet</b>
+					</div>
 				</div>
 			</div>
 		</div>

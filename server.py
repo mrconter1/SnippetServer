@@ -2,9 +2,12 @@
 
 from sqlite3 import Error
 from aiohttp import web
+import os.path
 import aiosqlite
 import asyncio
 import sqlite3
+import random
+import string
 import aiohttp_jinja2
 import jinja2
 from pathlib import Path
@@ -24,6 +27,7 @@ class Userdata():
 
         self.conn = self.createConnection("userdata.db")
         self.initUserdata()
+        self.sessions = []
 
     def createConnection(self, dbName):
 
@@ -48,12 +52,23 @@ class Userdata():
         c.execute(tableQuery)
 
     async def auth(self, request):
-        print("Autheticating..")
         session = await get_session(request)
-        if 'test' in session:
-            print(session['test'])
+        if 'token' in session:
+            token = session['token']
+            if token in self.sessions:
+                return True
+        return False
+
+    def generateToken(self):
+        token =  ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for _ in range(75))
+        self.sessions.append(token)
+        return token
+
+    async def login(self, username, password):
+        if username == "a" and password == "b":
+            return True
         else:
-            session['test'] = "hello"
+            return False
 
     def userExists(self, username):
         return True
@@ -127,8 +142,13 @@ class Database():
 
         results = []
 
+        fields = [ix[0] for ix in c.description]
+
         for row in rows:
-            results.append(row[1])
+            rowDict = {}
+            rowDict[fields[0]] = row[0]
+            rowDict[fields[1]] = row[1]
+            results.append(rowDict)
             
         data = {}
         data['results'] = results
@@ -145,8 +165,13 @@ class Database():
 
         results = []
 
+        fields = [ix[0] for ix in c.description]
+
         for row in rows:
-            results.append(row[1])
+            rowDict = {}
+            rowDict[fields[0]] = row[0]
+            rowDict[fields[1]] = row[1]
+            results.append(rowDict)
             
         data = {}
         data['results'] = results
@@ -160,7 +185,7 @@ class Database():
         c = self.conn.cursor()
         values = []
         values.append(funcName)
-        query = "SELECT * FROM snippets WHERE funcName = ? LIMIT 1"
+        query = "SELECT * FROM snippets WHERE id = ? LIMIT 1"
         c.execute(query, values)
         rows = c.fetchall()
         
@@ -254,6 +279,15 @@ class Database():
         self.conn.commit()
     
         return "Thank you!"
+
+    def deleteSnippet(self, funcID):
+
+        c = self.conn.cursor()
+        values = []
+        values.append(int(funcID))
+        query = "DELETE FROM snippets WHERE id = ?"
+        c.execute(query, values)
+        self.conn.commit()
     
     def modifySnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
         return 0
@@ -275,16 +309,20 @@ class Server():
         self.userdata = Userdata()
 
         app = web.Application()
-        app.router.add_get('/search/{query}', self.search)
         app.router.add_get('/search/{lang}/{query}', self.search)
         app.router.add_get('/latest/', self.latest)
         app.router.add_get('/getSnippet/{query}', self.getSnippet)
         app.router.add_post('/addSnippet/', self.addSnippet)
+        app.router.add_post('/login/', self.login)
+        app.router.add_post('/delete/', self.deleteSnippet)
+        app.router.add_get('/isAuth/', self.isAuth)
     
         #For session handling
-        fernet_key = fernet.Fernet.generate_key()
+        key = "l7uPzuvRZt0bhv6ApgvR30stNZfAKV-VX7RLlgQvWLU="
+        fernet_key = key.encode('utf-8')
+        #fernet_key = fernet.Fernet.generate_key()
         secret_key = base64.urlsafe_b64decode(fernet_key)
-        setup(app, EncryptedCookieStorage(secret_key))
+        setup(app, EncryptedCookieStorage(secret_key, httponly = False))
         
         here = Path(__file__).resolve().parent
         
@@ -312,9 +350,38 @@ class Server():
 
         web.run_app(app, ssl_context=ssl_context, host='78.141.209.170', port='443')
 
+    async def isAuth(self, request):
+
+        data = {}
+        auth = await self.userdata.auth(request)
+        if not auth:
+            data['authenticated'] = "false"
+            json_data = json.dumps(data)
+            return await self.respond(request, json_data)
+        else:
+            data['authenticated'] = "true"
+            json_data = json.dumps(data)
+            return await self.respond(request, json_data)
+
+    async def login(self, request):
+
+        spam = await self.isSpam(request, 1)
+        if spam:
+            return await self.respond(request, "You are trying passwords too fast..")
+
+        session = await get_session(request)
+        post = await request.post()
+        username = post.get('username')
+        password = post.get('password')
+        success = await self.userdata.login(username, password)
+        if success:
+            token = self.userdata.generateToken()
+            session['token'] = token
+            return web.Response(text=token)
+        else:
+            return web.Response(text="Adding account support soon..")
+
     async def search(self, request):
-        
-        await self.userdata.auth(request)
 
         name = request.match_info.get('query', 'Anonymous')
         lang = request.match_info.get('lang', 'Anonymous')
@@ -337,9 +404,9 @@ class Server():
 
     async def addSnippet(self, request):
  
-        spam = await self.isSpam(request, 30)
+        spam = await self.isSpam(request, 1)
         if spam:
-            return await self.respond(request, "You can only add one snippet each 30 seconds..")
+            return await self.respond(request, "You can only add one snippet each 10 seconds..")
         post = await request.post()
         funcName = post.get('funcName')
         tags = post.get('tags')
@@ -363,6 +430,23 @@ class Server():
     
         if len(result) > 0:
             return await self.respond(request, result)
+
+    #Admin features
+    async def deleteSnippet(self, request):
+
+        spam = await self.isSpam(request, 5)
+        if spam:
+            return await self.respond(request, "You are doing this too fast..")
+
+        auth = await self.userdata.auth(request)
+        if not auth:
+            return await self.respond(request, "Not authenticated..")
+        
+        post = await request.post()
+        funcID = post.get('id')
+        self.database.deleteSnippet(funcID)
+
+        return await self.respond(request, "Snippet deleted..")
 
     async def isSpam(self, request, allowedRequestRate):
         spam = False
