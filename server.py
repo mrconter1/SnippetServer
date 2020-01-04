@@ -102,7 +102,7 @@ class Database():
                                         funcName text,
                                         tags text,
                                         input text,
-                                        output text,
+                                        example text,
                                         deps text,
                                         author text,
                                         desc text,
@@ -129,6 +129,20 @@ class Database():
         else:
             return False
 
+    def getCount(self):
+
+        c = self.conn.cursor()
+        query = "SELECT * FROM snippets"
+        c.execute(query)
+        rows = c.fetchall()
+        count = str(len(rows))
+
+        data = {}
+        data["count"] = count;
+
+        json_data = json.dumps(data)
+        return json_data
+
     def getSuggestions(self, query, lang):
 
         c = self.conn.cursor()
@@ -136,8 +150,34 @@ class Database():
         values.append("%" + query + "%")
         values.append("%" + query + "%")
         values.append(lang)
-        query = "SELECT * FROM snippets WHERE (funcName like ? OR tags like ?) AND lang = ? limit 10"
+        query = "SELECT * FROM snippets WHERE (funcName like ? OR tags like ?) AND lang = ? limit 7"
         c.execute(query, values)
+        rows = c.fetchall()
+
+        results = []
+
+        fields = [ix[0] for ix in c.description]
+
+        for row in rows:
+            rowDict = {}
+            rowDict[fields[0]] = row[0]
+            rowDict[fields[1]] = row[1]
+            rowDict[fields[3]] = row[3]
+            rowDict[fields[4]] = row[4]
+            rowDict[fields[7]] = row[7]
+            results.append(rowDict)
+            
+        data = {}
+        data['results'] = results
+        json_data = json.dumps(data)
+
+        return json_data
+
+    def getLatest(self):
+
+        c = self.conn.cursor()
+        query = "SELECT * FROM snippets ORDER BY id DESC LIMIT 7"
+        c.execute(query)
         rows = c.fetchall()
 
         results = []
@@ -156,11 +196,14 @@ class Database():
 
         return json_data
 
-    def getLatest(self):
+    def getSnippetsBetween(self, a, b):
 
         c = self.conn.cursor()
-        query = "SELECT * FROM snippets ORDER BY id DESC LIMIT 10"
-        c.execute(query)
+        values = []
+        values.append(b)
+        values.append(a)
+        query = "SELECT * FROM snippets ORDER BY id LIMIT ? OFFSET ?"
+        c.execute(query, values)
         rows = c.fetchall()
 
         results = []
@@ -194,7 +237,7 @@ class Database():
             data['funcName'] = ""
             data['tags'] = ""
             data['input'] = ""
-            data['output'] = ""
+            data['example'] = ""
             data['deps'] = ""
             data['author'] = ""
             data['desc'] = ""
@@ -208,7 +251,7 @@ class Database():
         data['funcName'] = result[1]
         data['tags'] = result[2]
         data['input'] = result[3]
-        data['output'] = result[4]
+        data['example'] = result[4]
         data['deps'] = result[5]
         data['author'] = result[6]
         data['desc'] = result[7]
@@ -236,7 +279,7 @@ class Database():
             return True
         return False
  
-    def addSnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
+    def addSnippet(self, funcName, tags, inputEx, example, deps, author, desc, lang, code):
 
         lang = lang.strip().lower()
 
@@ -257,7 +300,7 @@ class Database():
         values.append(funcName)
         values.append(tags)
         values.append(inputEx)
-        values.append(outputEx)
+        values.append(example)
         values.append(deps)
         values.append(author)
         values.append(desc)
@@ -267,7 +310,7 @@ class Database():
         query = '''INSERT INTO snippets(    funcName,
                                             tags,
                                             input,
-                                            output,
+                                            example,
                                             deps,
                                             author,
                                             desc,
@@ -289,7 +332,7 @@ class Database():
         c.execute(query, values)
         self.conn.commit()
     
-    def modifySnippet(self, funcName, tags, inputEx, outputEx, deps, author, desc, lang, code):
+    def modifySnippet(self, funcName, tags, inputEx, example, deps, author, desc, lang, code):
         return 0
 
     def returnSnippetHistory(self, funcName):
@@ -316,6 +359,8 @@ class Server():
         app.router.add_post('/login/', self.login)
         app.router.add_post('/delete/', self.deleteSnippet)
         app.router.add_get('/isAuth/', self.isAuth)
+        app.router.add_get('/getSnippetCount/', self.getSnippetCount)
+        app.router.add_get('/getSnippetsBetween/{a}/{b}', self.getSnippetsBetween)
     
         #For session handling
         key = "l7uPzuvRZt0bhv6ApgvR30stNZfAKV-VX7RLlgQvWLU="
@@ -330,8 +375,19 @@ class Server():
         def index_handler(request):
             return {'name': 'Jonatan'}
 
+        @aiohttp_jinja2.template('home.html')
+        def home_handler(request):
+            return {'name': 'Jonatan'}
+
+        @aiohttp_jinja2.template('list.html')
+        def list_handler(request):
+            return {'name': 'Jonatan'}
+
         aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(str(here)))
         app.router.add_get('/', index_handler)
+        app.router.add_get('/home/', home_handler)
+        app.router.add_get('/list/', list_handler)
+        app.router.add_get('/list/{temp}', list_handler)
 
         app.router.add_static('/static/',
                       path=str('static'),
@@ -395,12 +451,26 @@ class Server():
 
         return await self.respond(request, result)
 
+    async def getSnippetsBetween(self, request):
+
+        a = request.match_info.get('a', 'Anonymous')
+        b = request.match_info.get('b', 'Anonymous')
+        result = self.database.getSnippetsBetween(a, b)
+
+        return await self.respond(request, result)
+
     async def getSnippet(self, request):
         
         name = request.match_info.get('query', 'Anonymous')
         result = self.database.getSnippet(name)
 
         return await self.respond(request, result)
+
+    async def getSnippetCount(self, request):
+        
+        count = self.database.getCount()
+
+        return await self.respond(request, count)
 
     async def addSnippet(self, request):
  
@@ -411,7 +481,7 @@ class Server():
         funcName = post.get('funcName')
         tags = post.get('tags')
         inputEx = post.get('input')
-        outputEx = post.get('output')
+        example = post.get('example')
         deps = post.get('deps')
         author = post.get('author')
         desc = post.get('desc')
@@ -421,7 +491,7 @@ class Server():
         result = self.database.addSnippet(  funcName,
                                             tags,
                                             inputEx,
-                                            outputEx,
+                                            example,
                                             deps,
                                             author,
                                             desc,
@@ -434,7 +504,7 @@ class Server():
     #Admin features
     async def deleteSnippet(self, request):
 
-        spam = await self.isSpam(request, 5)
+        spam = await self.isSpam(request, 1)
         if spam:
             return await self.respond(request, "You are doing this too fast..")
 

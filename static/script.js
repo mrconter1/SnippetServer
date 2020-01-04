@@ -37,7 +37,20 @@ $(document).ready(function () {
 	var buttonState = "add";
 	
 	//Initilize page
-	loadLatest();
+	var url = window.location.href;
+	var match = url.match(new RegExp(".com/" + "(.+)" + "/"));
+	var page = "";
+	if (match != null) {
+		page = match[1];
+	}
+
+	if (page === "list") {
+		loadListPage();
+	} else {
+		loadLatest();
+	}
+	
+	//If certain snippet is to be loaded
 	loadSpecifiedSnippet();
 
 	//Set initial language
@@ -45,6 +58,7 @@ $(document).ready(function () {
 		var lang = $.cookie("lang");
 		$(".langOpt").html(lang);
 	}
+
 
 	function isAuthenticated() {
 		$.getJSON('/isAuth/', function(json) {
@@ -59,8 +73,61 @@ $(document).ready(function () {
 		$('.deleteBtn').each(function () {
 			$(this).show();
 		});
-	 }
+	}
 
+	//Handles list page
+	function loadListPage() {
+		$.getJSON('/getSnippetCount/', function(json) {
+
+			var resultsPerPage = 3;
+
+			var page = url.match(new RegExp("list/" + "(.+)"))[1];
+			var offset = (page-1)*resultsPerPage;
+			loadRange(offset, resultsPerPage);
+			
+			var count = Number(sanitize(json["count"]));
+			var currentPage;
+			var numOfPages = Math.ceil(count/resultsPerPage);
+
+			var content = '<p id = "previousPage">&#60;<p>';
+			$(content).hide().appendTo("#pageChooser").fadeIn(1000);
+			for (currentPage = 1; currentPage <= numOfPages; currentPage++) {
+				var content = '<p class="page">' + currentPage + '</p>';
+				$(content).hide().appendTo("#pageChooser").fadeIn(1000);
+			}
+			var content = '<p id = "nextPage">&#62;<p>';
+			$(content).hide().appendTo("#pageChooser").fadeIn(1000);
+
+			if (page === "1") {
+				$("#previousPage").hide();
+			}
+			var pageCount = $('.page').size();
+			$(".page").each( function( index, element ){
+				var number = $(this).text();
+				if (number === page) {
+					$(this).css("font-weight","Bold");
+					if (Number(number) === pageCount) {
+						$("#nextPage").hide();
+					}
+				}
+			});
+			$(".page").click(function() {
+				var page = $(this).text();
+				window.location.href = '/list/' + page;
+			});
+			$("#previousPage").click(function() {
+				var prevPage = Number(page) - 1;
+				window.location.href = '/list/' + prevPage;
+			});
+			$("#nextPage").click(function() {
+				var nextPage = Number(page) + 1;
+				window.location.href = '/list/' + nextPage;
+			});
+			$(".backBtn").click(function() {
+				window.location.href = '/';
+			});
+		});
+	}
 
 	//Loads snippet if specified
 	function loadSnippet(snippetID) {
@@ -68,7 +135,7 @@ $(document).ready(function () {
 			funcName = sanitize(json["funcName"]);
 			tags = sanitize(json["tags"]);
 			input = sanitize(json["input"]);
-			output = sanitize(json["output"]);
+			example = sanitize(json["example"]);
 			deps = sanitize(json["deps"]);
 			desc = sanitize(json["desc"]);
 			lang = sanitize(json["lang"]);
@@ -77,11 +144,13 @@ $(document).ready(function () {
 			$("input[name=funcName]").val(funcName);
 			$("input[name=tags]").val(tags);
 			$("input[name=input]").val(input);
-			$("input[name=output]").val(output);
+			$("input[name=example]").val(example);
 			$("input[name=deps]").val(deps);
 			$("textarea[name=desc]").val(desc);
 			$("input[name=lang]").val(lang);
 			$("textarea[name=code]").val(code);
+
+			$("#pinned").html(funcName);
 		});
 	}
 
@@ -90,6 +159,43 @@ $(document).ready(function () {
 		if (parameter != null) {
 			loadSnippet(parameter);
 		}	
+	}
+	
+	function populateRangeList(json) {
+		//Extract list from json
+		list = json["results"];
+		//Empty list
+		$("#snippetRangeList").empty();
+		if (list.length > 0) {
+			//Populate list with results
+			jQuery.each(list, function(index, item) {
+				var snippet = '<div class = "snippetName">';
+				snippet += '<div class="nameDiv">' + sanitize(item.funcName) + "</div>";
+				snippet += '<div class="deleteBtn" style="display:none"><b class="deleteBtnTxt">Delete</b></div>';
+				snippet += '<input type="hidden" value="' + sanitize(item.id.toString()) + '" />';
+				snippet += '</div>';
+				var divider = '<div class="divider"></div>';
+				$(snippet).hide().appendTo("#snippetRangeList").fadeIn(250);
+				if (index != (list.length-1)) {
+					$("#snippetRangeList").append(divider).hide().fadeIn(250);
+				}
+			});
+    			$("#pageChooser").hide();
+			$(".divider").each(function(i) {
+    				$(this).hide();
+			});
+			$(".snippetName").each(function(i) {
+    				$(this).hide();
+			});
+			$(".snippetName").each(function(i) {
+				$(this).delay(15 * i).fadeIn(100);
+			});
+			$(".divider").fadeIn(1000);
+			$("#pageChooser").fadeIn(1000);
+		} else {
+			var snippet = '<div class = "snippetName">No snippets..</div>';
+			$("#snippetRangeList").append(snippet);
+		}
 	}
 
 	function populateList(json) {
@@ -111,6 +217,16 @@ $(document).ready(function () {
 					$("#snippetList").append(divider).hide().fadeIn(100);
 				}
 			});
+			$(".divider").each(function(i) {
+    				$(this).hide();
+			});
+			$(".snippetName").each(function(i) {
+    				$(this).hide();
+			});
+			$(".snippetName").each(function(i) {
+				$(this).delay(50 * i).fadeIn(250);
+			});
+			$(".divider").fadeIn(500);
 			isAuthenticated();
 		} else {
 			var snippet = '<div class = "snippetName">No snippets..</div>';
@@ -125,6 +241,14 @@ $(document).ready(function () {
 			populateList(json);
 		});
     	}
+	//
+	//Load range of snippets and add to snippet list
+	function loadRange(a, b) {
+		//Fetch latest
+		$.getJSON('/getSnippetsBetween/' + a + '/' + b, function(json) {
+			populateRangeList(json);
+		});
+    	}
 
 	//Post a snippet
 	$("#addBtn").click(function() {
@@ -135,7 +259,7 @@ $(document).ready(function () {
 			$("input[name=funcName]").val("");
 			$("input[name=tags]").val("");
 			$("input[name=input]").val("");
-			$("input[name=output]").val("");
+			$("input[name=example]").val("");
 			$("input[name=deps]").val("");
 			$("textarea[name=desc]").val("");
 			$("input[name=lang]").val("");
@@ -148,7 +272,7 @@ $(document).ready(function () {
 				funcName: $("input[name=funcName]").val(), 
 				tags: $("input[name=tags]").val(), 
 				input: $("input[name=input]").val(), 
-				output: $("input[name=output]").val(), 
+				example: $("input[name=example]").val(), 
 				deps: $("input[name=deps]").val(), 
 				desc: $("textarea[name=desc]").val(), 
 				lang: $("input[name=lang]").val(), 
@@ -184,6 +308,9 @@ $(document).ready(function () {
 	});
 	
 	$(document).on('mouseenter', '.snippetName', function() {
+		if ($("#pinned").length) {
+			return;
+		}
 		var snippetID = $(this).find('input').val();
 		loadSnippet(snippetID);
 		buttonState = "clear";
@@ -191,9 +318,9 @@ $(document).ready(function () {
 	});
 	
 	$(document).on('mouseup', '.snippetName', function(e) {
-		if ($(event.target).is('.snippetName')){
-			var snippetName = $(this).text();
-			window.location.href = "?id=" + snippetName;
+		if ($(event.target).is('.snippetName') || $(event.target).is('.nameDiv')){
+			var snippetID = $(this).find('input').val();
+			window.location.href = "/?id=" + snippetID;
 		}
         });
 	
@@ -299,6 +426,10 @@ $(document).ready(function () {
 		$('.langOpt').css('border-radius', '5px');
 	});
 
+	$(this).on('click', '.snippetListLink', function() {
+		document.location.href="/list/1";
+	});
+
 	$(this).on('click', '.langOpt', function() {
 		var lang = $(this).text();
 		$('.langOpt').not(':first').remove();
@@ -307,7 +438,7 @@ $(document).ready(function () {
 		$.cookie("lang", lang);
 	});
 
-	//Login
+	//---Login---
 	$(this).on('click', '.loginBtn', function() {
 		if ($(".loginPanel").is(":visible")) {
 			$(".loginPanel").fadeOut(200);
@@ -333,8 +464,36 @@ $(document).ready(function () {
 
   		}
 	});   	
+	
+	//---Snippet pinning---
+	//Set pinned snippet if selected
+	if (window.location.href.indexOf("?id") > -1) {
+		var id = getUrlParameter("id");
+		$(".infoDiv").append('<p id = "title">Pinned Snippet</p>');
+		var snippet = '<div class = "snippetName">';
+		snippet += '<div id = "pinned" class="nameDiv">' + sanitize(name) + "</div>";
+		snippet += '<b class="unpinBtnTxt">Unpin</b>';
+		snippet += '<input type="hidden" value="' + sanitize(id) + '" />';
+		snippet += '</div>';
+		var divider = '<div class="divider"></div>';
+		$(".infoDiv").append(snippet).hide().fadeIn(100);
+		loadSpecifiedSnippet();
+		$('#pinned').css('background-color', '#cccccc');
+		$('#pinned').css('width', '100%');
+		$('#pinned').css('padding', '5px');
+		$('#pinned').css('border-radius', '7px 0px 0px 7px');
+	}
 
-	//Admin
+	//Disables hovering effect for pinned snipped
+	$(".snippetName").hover(function() {
+  		$(this).css("background-color","transparent")
+	});
+	
+	$(".unpinBtnTxt").click(function() {
+		document.location.href="/";
+	});
+
+	//---Admin---
 	$(this).on('click', '.deleteBtnTxt', function(e) {
 		var res = confirm('Are you sure?');
 		if (res && $(event.target).is('.deleteBtnTxt')){
