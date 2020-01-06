@@ -79,7 +79,7 @@ $(document).ready(function () {
 	function loadListPage() {
 		$.getJSON('/getSnippetCount/', function(json) {
 
-			var resultsPerPage = 3;
+			var resultsPerPage = 15;
 
 			var page = url.match(new RegExp("list/" + "(.+)"))[1];
 			var offset = (page-1)*resultsPerPage;
@@ -124,7 +124,7 @@ $(document).ready(function () {
 				window.location.href = '/list/' + nextPage;
 			});
 			$(".backBtn").click(function() {
-				window.location.href = '/';
+				window.location.href = '/repo/';
 			});
 		});
 	}
@@ -320,7 +320,7 @@ $(document).ready(function () {
 	$(document).on('mouseup', '.snippetName', function(e) {
 		if ($(event.target).is('.snippetName') || $(event.target).is('.nameDiv')){
 			var snippetID = $(this).find('input').val();
-			window.location.href = "/?id=" + snippetID;
+			window.location.href = "/repo/?id=" + snippetID;
 		}
         });
 	
@@ -490,7 +490,7 @@ $(document).ready(function () {
 	});
 	
 	$(".unpinBtnTxt").click(function() {
-		document.location.href="/";
+		document.location.href="/repo/";
 	});
 
 	//---Admin---

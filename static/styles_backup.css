@@ -1,5 +1,5 @@
 body {
-	background-image: linear-gradient(to right, rgb(33, 35, 37), rgb(36, 38, 40));
+        background-image: linear-gradient(to right, #e0e0e0 , #d6d6d6);
         font-family: Nunito;
         margin: 0;
         height: 100vh;
@@ -29,7 +29,7 @@ b {
 	position: absolute;
         font-size: 15px;
         font-family: Nunito;
-        color: #8a8a8a;
+        color: black;
 	padding:3px;
 	padding-left:10px;
 	padding-right:10px;
@@ -100,7 +100,7 @@ b {
 .langOpt {
         font-size: 20px;
         color: white;
-        background-color: #3370bb;
+        background-color: #4a8ee0;
 	padding:3px;
 	padding-left:10px;
 	padding-right:10px;
@@ -113,7 +113,7 @@ b {
 .langOpt:hover {
         font-size: 20px;
         color: white;
-        background-color: #4a8ee0;
+        background-color: #366eb3; 
 }
 
 #logo {
@@ -144,7 +144,7 @@ b {
 
         outline: 0;
         border-width: 0 0 2px;
-        border-color: #3d3d3d;
+        border-color: #cccccc;
 
         background-color: transparent;
 }
@@ -241,7 +241,7 @@ b {
 }
 
 .divider {
-        border-bottom: 1px solid #3d3d3d;
+        border-bottom: 1px solid #cccccc;
 }
 
 #inputDiv {
@@ -256,7 +256,7 @@ b {
 	width: 50%;
 	border-style: solid;
         border-width: 2px;
-        border-color: #3d3d3d;
+        border-color: #cccccc;
 	padding: 10px;
 }
 
@@ -264,7 +264,7 @@ b {
         width: 100%;
         border-style: solid;
         border-width: 2px;
-        border-color: #3d3d3d;
+        border-color: #cccccc;
 	padding: 10px;
 }
 
@@ -279,7 +279,7 @@ b {
         background-color: transparent;
 	border-style: solid;
         border-width: 2px;
-        border-color: #3d3d3d;
+        border-color: #cccccc;
 	padding: 10px;
 }
 
@@ -290,9 +290,10 @@ b {
 	width: 100%;
 	float: left;
         text-align: center;
-	background-color: #3370bb;
+	background-color: #549af0;
         padding-top: 1%;
         padding-bottom: 1%;
+        padding-left: 1%;
         transition: background-color 0.5s;
 }
 

@@ -1,0 +1,136 @@
+body {
+  	background-image: url("blur.png");
+	background-repeat: no-repeat; 
+  	background-size: cover;
+
+	display: block;
+	margin: 0;
+	width: 100%;
+
+}
+
+.container {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+	align-items: center;
+	position: relative;
+	z-index: 10;
+	height: 100%;
+}
+
+.content {
+	width: 100wh;
+	text-align: center; 
+}
+
+.background {
+	width: 100%;
+	height: 50vh;
+	text-align: center; 
+	background-color: #12171e;
+	position: absolute;
+	top: 50vh;
+  	-webkit-clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 100%);
+  	clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 100%);
+	-moz-box-shadow:    0 0 10px rgba(0, 0, 0, 0.5);
+	-webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	box-shadow:         0 0 10px rgba(0, 0, 0, 0.5);
+	z-index: -10;
+}
+
+#logoSpan {
+	font-size: 60px;
+	font-family: Nunito;
+	color: #a0eafb;
+    	padding: 0;
+}
+
+#betaTag {
+	font-size: 20px;
+	font-family: Nunito;
+	color: #ccc;
+    	padding: 0;
+}
+
+#titleSpan {
+	font-size: 25px;
+	font-family: Nunito;
+	color: #ccc;
+    	padding: 0;
+}
+
+#infoSpan {
+	font-size: 20px;
+	font-family: Nunito;
+	color: #ccc;
+    	padding: 0;
+	text-justify: auto;
+}
+
+#info {
+	width: 859px;
+	display: inline-block;
+	border-radius: 5px;
+	background-color: #12171e;
+	padding: 2%;
+	#-moz-box-shadow:    0 0 10px rgba(0, 0, 0, 0.5);
+	#-webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	box-shadow:         0 0 10px rgba(0, 0, 0, 0.5);
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+#demo {
+	background-image:url(example.gif);
+	background-repeat: no-repeat;
+	background-size: cover; 
+	width: 859px;
+	height: 429px;
+	display: inline-block;
+	border-radius: 5px;
+	-moz-box-shadow:    0 0 10px rgba(0, 0, 0, 0.5);
+	-webkit-box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	box-shadow:         0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#portal {
+	width: 859px;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-around;
+	align-items: center;
+	margin:0 auto;
+}
+
+.button {
+	font-size: 30px;
+	font-family: Nunito;
+	border-radius: 5px;
+	width: 20%;
+	padding: 1.5%;
+	color: #eee;
+	cursor: pointer;
+	transition: box-shadow 0.2s ease-in-out;
+}
+
+.button:hover {
+  	box-shadow: inset 0em 0em 0em 10em rgba(0, 0, 0, 0.3);
+}
+
+#plugin {
+	background-color: #ce7f39;
+}
+
+#wiki {
+	background-color: #4345b5;
+}
+
+#reddit {
+	background-color: #4c8e3e;
+}
+
+#repo {
+	background-color: #8e3e46;
+}

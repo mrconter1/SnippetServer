@@ -384,8 +384,8 @@ class Server():
             return {'name': 'Jonatan'}
 
         aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(str(here)))
-        app.router.add_get('/', index_handler)
-        app.router.add_get('/home/', home_handler)
+        app.router.add_get('/', home_handler)
+        app.router.add_get('/repo/', index_handler)
         app.router.add_get('/list/', list_handler)
         app.router.add_get('/list/{temp}', list_handler)
 
@@ -401,7 +401,8 @@ class Server():
         key = '/etc/letsencrypt/live/snippetdepot.com/privkey.pem'
 
         ssl_context = ssl.create_default_context()
-        ssl_context.verify_mode = ssl.CERT_OPTIONAL
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
         ssl_context.load_cert_chain(cert, key)
 
         web.run_app(app, ssl_context=ssl_context, host='78.141.209.170', port='443')
